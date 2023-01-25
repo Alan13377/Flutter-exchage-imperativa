@@ -1,5 +1,4 @@
 import 'package:exchange_api/app/presentation/modules/home/providers/home_provider.dart';
-import 'package:exchange_api/app/presentation/modules/home/providers/home_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,21 +10,27 @@ class HomeView extends ConsumerWidget {
     final repository = ref.watch(homeProvider);
 
     return Scaffold(
-      body: () {
-        final state = repository.state;
-
-        if (state is HomeStateLoading) {
-          print(state);
-          return const Center(
-            child: CircularProgressIndicator(),
+      body: repository.state.when<Widget>(
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        failed: (failure) {
+          final String message = failure.when(
+            network: () => "Check your internet connection",
+            notFound: () => "Resource not found",
+            server: () => "server error",
+            unauthorized: () => "unauthorized",
+            badRequest: () => "bad request",
+            local: () => "Unknow Error",
           );
-        }
 
-        if (state is HomeStateLoaded) {
+          return Center(child: Text(message));
+        },
+        loaded: (cryptos) {
           return ListView.builder(
-            itemCount: state.cryptos.length,
+            itemCount: cryptos.length,
             itemBuilder: (context, index) {
-              final crypto = state.cryptos[index];
+              final crypto = cryptos[index];
               return ListTile(
                 title: Text(crypto.id),
                 trailing: Text(
@@ -35,11 +40,8 @@ class HomeView extends ConsumerWidget {
               );
             },
           );
-        }
-        return const Center(
-          child: Text("Error"),
-        );
-      }(),
+        },
+      ),
     );
   }
 }

@@ -1,14 +1,15 @@
+import 'package:exchange_api/app/domain/failures/http_request_failures.dart';
 import 'package:exchange_api/app/domain/models/crypto.dart';
+import "package:freezed_annotation/freezed_annotation.dart";
 
-abstract class HomeState {}
+//*Nombre del archivo actual
+part "home_state.freezed.dart";
 
-class HomeStateLoading extends HomeState {}
-
-class HomeStateFailed extends HomeState {}
-
-class HomeStateLoaded extends HomeState {
-  //*Gu ardar las cryptos
-  final List<Crypto> cryptos;
-
-  HomeStateLoaded(this.cryptos);
+//*Estados de la respuesta de la api
+@freezed
+class HomeState with _$HomeState {
+  //*Clase-factoryConstructor //Nombre de Clase a generar
+  factory HomeState.loading() = _Loading;
+  factory HomeState.failed(HttpRequestFailure failure) = _Failed;
+  factory HomeState.loaded(List<Crypto> cryptos) = _Loaded;
 }

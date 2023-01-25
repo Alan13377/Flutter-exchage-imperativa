@@ -1,5 +1,4 @@
 import 'package:exchange_api/app/domain/repositories/exchange_repository.dart';
-import 'package:exchange_api/app/domain/results/get_prices/get_prices_result.dart';
 import 'package:exchange_api/app/presentation/modules/home/providers/home_state.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,8 @@ final homeProvider = ChangeNotifierProvider((ref) {
 
 class HomeProvider extends ChangeNotifier {
   //*Estado inicial
-  HomeState _state = HomeStateLoading();
+
+  HomeState _state = HomeState.loading();
   final ExchangeRepository exchangeRepository;
   HomeState get state => _state;
 
@@ -20,10 +20,14 @@ class HomeProvider extends ChangeNotifier {
   });
 
   Future<void> init() async {
-    if (state is! HomeStateLoading) {
-      _state = HomeStateLoading();
-      notifyListeners();
-    }
+    state.maybeWhen(
+      loading: () {},
+      orElse: () {
+        _state = HomeState.loading();
+        notifyListeners();
+      },
+    );
+
     final result = await exchangeRepository.getPrices(
       [
         "bitcoin",
@@ -32,12 +36,10 @@ class HomeProvider extends ChangeNotifier {
         "dogecoin",
       ],
     );
+    _state = result.when(
+        left: (failure) => _state = HomeState.failed(failure),
+        right: (cryptos) => _state = HomeState.loaded(cryptos));
 
-    if (result is GetPricesSuccess) {
-      _state = HomeStateLoaded(result.cryptos);
-    } else {
-      _state = HomeStateFailed();
-    }
     notifyListeners();
   }
 }
