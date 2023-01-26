@@ -1,4 +1,7 @@
 import 'package:exchange_api/app/presentation/modules/home/providers/home_provider.dart';
+import 'package:exchange_api/app/presentation/modules/home/view/widgets/appBar.dart';
+import 'package:exchange_api/app/presentation/modules/home/view/widgets/error.dart';
+import 'package:exchange_api/app/presentation/modules/home/view/widgets/loaded.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,35 +13,17 @@ class HomeView extends ConsumerWidget {
     final repository = ref.watch(homeProvider);
 
     return Scaffold(
-      body: repository.state.when<Widget>(
-        loading: () => const Center(
+      appBar: const HomeAppBar(),
+      body: repository.state.map<Widget>(
+        loading: (_) => const Center(
           child: CircularProgressIndicator(),
         ),
-        failed: (failure) {
-          final String message = failure.when(
-            network: () => "Check your internet connection",
-            notFound: () => "Resource not found",
-            server: () => "server error",
-            unauthorized: () => "unauthorized",
-            badRequest: () => "bad request",
-            local: () => "Unknow Error",
-          );
-
-          return Center(child: Text(message));
+        failed: (state) {
+          return HomeError(failure: state.failure);
         },
-        loaded: (cryptos) {
-          return ListView.builder(
-            itemCount: cryptos.length,
-            itemBuilder: (context, index) {
-              final crypto = cryptos[index];
-              return ListTile(
-                title: Text(crypto.id),
-                trailing: Text(
-                  crypto.price.toStringAsFixed(2),
-                ),
-                subtitle: Text(crypto.symbol),
-              );
-            },
+        loaded: (state) {
+          return HomeLoaded(
+            cryptos: state.cryptos,
           );
         },
       ),
